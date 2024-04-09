@@ -33,7 +33,8 @@ char * LibCamera::getCameraId(){
 
 void LibCamera::configureStill(uint32_t width, uint32_t height, PixelFormat format, int buffercount, int rotation) {
     printf("Configuring still capture...\n");
-    config_ = camera_->generateConfiguration({ StreamRole::StillCapture });
+    config_ = camera_->generateConfiguration({ StreamRole::Viewfinder });
+    //config_ = camera_->generateConfiguration({ StreamRole::StillCapture });
     if (width && height) {
         Size size(width, height);
         config_->at(0).size = size;

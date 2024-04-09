@@ -53,6 +53,13 @@
 #include "../output_file/output_file.h"
 
 
+struct {
+    client_info **infos;
+    unsigned int client_count;
+    pthread_mutex_t mutex;
+} client_infos;
+
+
 static globals *pglobal;
 extern context servers[MAX_OUTPUT_PLUGINS];
 int piggy_fine = 2; // FIXME make it command line parameter

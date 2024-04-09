@@ -22,7 +22,9 @@ if (PLUGIN_INPUT_UVC)
     MJPG_STREAMER_PLUGIN_COMPILE(input_uvc dynctrl.c
                                            input_uvc.c
                                            jpeg_utils.c
-                                           v4l2uvc.c)
+                                           v4l2uvc.c
+					   ../../utils.c
+				   )
 
     if (V4L2_LIB)
         target_link_libraries(input_uvc ${V4L2_LIB})

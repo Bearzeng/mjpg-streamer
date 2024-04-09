@@ -15,7 +15,7 @@ if (PLUGIN_INPUT_LIBCAMERA)
     set(CMAKE_CXX_STANDARD 17)
     include_directories(${LIBCAMERA_INCLUDE_DIRS})
 
-    MJPG_STREAMER_PLUGIN_COMPILE(input_libcamera input_libcamera.cpp LibCamera.cpp jpeg_utils.c)
+    MJPG_STREAMER_PLUGIN_COMPILE(input_libcamera input_libcamera.cpp LibCamera.cpp jpeg_utils.c ../../utils.c)
 
     target_link_libraries(input_libcamera ${LIBCAMERA_LIBRARIES} ${JPEG_LIB})
     

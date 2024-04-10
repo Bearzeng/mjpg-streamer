@@ -40,3 +40,9 @@ Output plugins:
 * ~output_udp~ (not functional)
 * output_viewer ([documentation](plugins/output_viewer/README.md))
 
+
+Setup Development Env
+=====================
+
+sudo dnf install protobuf-devel.x86_64
+

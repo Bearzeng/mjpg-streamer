@@ -51,6 +51,10 @@ set (MJPG_STREAMER_PLUGIN_INSTALL_PATH "lib/mjpg-streamer")
 
 find_library(JPEG_LIB jpeg)
 
+#
+# Libraries
+#
+add_subdirectory(lib/gauger)
 
 #
 # Input plugins
@@ -63,6 +67,7 @@ add_subdirectory(plugins/input_raspicam)
 add_subdirectory(plugins/input_ptp2)
 add_subdirectory(plugins/input_uvc)
 add_subdirectory(plugins/input_libcamera)
+add_subdirectory(plugins/input_mvs)
 
 #
 # Output plugins
@@ -91,7 +96,8 @@ set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 
 add_executable(mjpg_streamer mjpg_streamer.c
-                             utils.c)
+                             utils.c
+                             )
 
 target_link_libraries(mjpg_streamer pthread dl)
 install(TARGETS mjpg_streamer DESTINATION bin)

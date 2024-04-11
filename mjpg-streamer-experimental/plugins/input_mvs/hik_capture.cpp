@@ -142,7 +142,7 @@ namespace jlab
     static void frameToMatrix(unsigned char *data, int size, MV_FRAME_OUT_INFO_EX &imgInfo, cv::Mat &mtr)
     {
         //mtr = cv::imdecode(cv::Mat(1, size, CV_8UC1, data), cv::IMREAD_COLOR);
-        mtr = cv::Mat(540, 720, CV_8UC1, data);
+        mtr = cv::Mat(imgInfo.nHeight, imgInfo.nWidth, CV_8UC1, data);
     }
 
     bool HikCapture::read(cv::Mat &img)
@@ -152,8 +152,8 @@ namespace jlab
         auto ret = MV_CC_GetOneFrameTimeout(mHandle, mData, mDataSize, &stImageInfo, 20);
         if (ret == MV_OK)
         {
-            printf("GetOneFrame, Width[%d], Height[%d], nFrameNum[%d]\n",
-                   stImageInfo.nWidth, stImageInfo.nHeight, stImageInfo.nFrameNum);
+//            printf("GetOneFrame, Width[%d], Height[%d], nFrameNum[%d]\n",
+//                   stImageInfo.nWidth, stImageInfo.nHeight, stImageInfo.nFrameNum);
 
             frameToMatrix(mData, mDataSize, stImageInfo, img);
             return true;

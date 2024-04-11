@@ -54,7 +54,7 @@ find_library(JPEG_LIB jpeg)
 #
 # Libraries
 #
-add_subdirectory(lib/gauger)
+#add_subdirectory(lib/gauger)
 
 #
 # Input plugins
@@ -79,6 +79,7 @@ add_subdirectory(plugins/output_rtsp)
 add_subdirectory(plugins/output_udp)
 add_subdirectory(plugins/output_viewer)
 add_subdirectory(plugins/output_zmqserver)
+add_subdirectory(plugins/output_gauger)
 
 #
 # mjpg_streamer executable

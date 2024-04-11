@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# UPL
+#
+
+export UPL_PATH=/opt/upl
+
+case "$1" in
+  start)
+	printf "Starting UPL: "
+	$UPL_PATH/scripts/upl_watchdog.sh &
+	[ $? = 0 ] && echo "OK" || echo "FAIL"
+	;;
+  stop)
+	printf "Stopping UPL: "
+	killall upl_watchdog.sh
+	killall mjpg_streamer
+	[ $? = 0 ] && echo "OK" || echo "FAIL"
+	;;
+  restart|reload)
+	"$0" stop
+	"$0" start
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
+

@@ -19,6 +19,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA    #
 #                                                                              #
 *******************************************************************************/
+#pragma once
 
 #include <syslog.h>
 #include "../mjpg_streamer.h"
@@ -73,6 +74,10 @@ struct _input {
     /* global JPG frame, this is more or less the "database" */
     unsigned char *buf;
     int size;
+
+    /* global raw frame data */
+    unsigned char *buf_raw;
+    int size_raw;
 
     /* v4l2_buffer timestamp */
     struct timeval timestamp;

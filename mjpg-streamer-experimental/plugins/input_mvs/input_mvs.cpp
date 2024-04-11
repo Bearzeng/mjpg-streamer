@@ -459,6 +459,9 @@ void *worker_thread(void *arg)
         // std::vector is guaranteed to be contiguous
         in->buf = &jpeg_buffer[0];
         in->size = jpeg_buffer.size();
+
+        in->buf_raw = src.data;
+        in->size_raw = src.rows * src.cols;
 #endif
         /* signal fresh_frame */
         pthread_cond_broadcast(&in->db_update);

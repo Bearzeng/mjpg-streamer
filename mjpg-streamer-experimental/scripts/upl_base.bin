@@ -1,0 +1,182 @@
+#!/bin/sh
+
+PATH=.:/usr/bin:/usr/sbin:/bin:/sbin
+umask 022
+echo_args="-e "
+localinstall=$1
+
+export TSLIB_CALIBFILE=/etc/pointercal
+export TSLIB_CONFFILE='/etc/ts.conf'
+export TSLIB_CONSOLEDEVICE='none'
+export TSLIB_FBDEVICE='/dev/fb1'
+export TSLIB_PLUGINDIR='/usr/lib/ts'
+export TSLIB_TSDEVICE="/dev/input/event"$(ls /sys/devices/platform/soc/3f204000.spi/spi_master/spi0/spi0.1/input | awk -F "input" '{print $2}')
+
+
+tmpname=/tmp/OUTNAME
+tarname=/tmp/upl.tar
+outdir=/opt
+upldir=$outdir/upl
+
+more <<"EOF"
+
+
+                       U P L    I N S T A L L E R
+
+=============================================================================
+
+UPL will be installed to /opt/upl
+
+NOTE: All original UPL files be removed.
+
+
+EOF
+
+agreed=
+while [ x$agreed = x ]; do
+	echo
+	echo "Will clean all exitsed UPL files including all record data. Go ahead? [yes or no] "
+	read reply leftover
+	case $reply in
+		y* | Y*)
+			agreed=1;;
+		n* | N*)
+			echo "do nothing";
+			exit 1;;
+	esac
+done
+
+head_line=$(sed '/^exit 0$/{p;q;}' $0 | wc -l)
+tail -n +${head_line} $0 > $tmpname 2>/dev/null
+echo "Creating $tmpname..."
+
+if [ -x /usr/bin/sum -o -x /bin/sum ] ; then
+	sum=`sum $tmpname`
+	echo "Checksumming..."
+	index=1
+	for s in $sum
+	do
+		case $index in
+		1)  sum1=$s;
+			index=2;
+			;;
+		2)  sum2=$s;
+			index=3;
+			;;
+		esac
+	done
+
+	if [ $sum1 != SUM1 -o $sum2 != SUM2 ] ; then
+		echo "The download file appears to be corrupted."
+		echo "Please do not attempt to install this archive file."
+		rm -f $tmpname
+		exit 1
+	fi
+else
+	echo "Can't find /usr/bin/sum to do checksum.  Continuing anyway."
+fi
+
+delete_opt_partition()
+{
+	if [  -e /dev/mmcblk0p3 ]; then
+		umount /dev/mmcblk0p3
+		parted /dev/mmcblk0 rm 3
+	fi 
+}
+
+create_opt_partition()
+{
+fdisk /dev/mmcblk0 << EOF
+n
+p
+3
+
+
+w
+EOF
+
+partprobe
+mke2fs -t ext3 /dev/mmcblk0p3 << EOF
+y
+EOF
+}
+
+mount_opt_partition()
+{
+	mount /dev/mmcblk0p3 /opt
+}
+
+create_database()
+{
+	if [ ! -d /opt/data ]; then mkdir /opt/data; fi
+	$upldir/scripts/create_db.sh
+}
+
+
+calibrate_ts()
+{
+	ts_calibrate
+}
+
+set_model_code()
+{
+	i2cset -y 1 0x40 0x80 0x55
+	sleep 1
+	i2cset -y 1 0x40 0x81 0x50
+	sleep 1
+	i2cset -y 1 0x40 0x82 0x4c
+	sleep 1
+	i2cset -y 1 0x40 0x83 0x2d
+	sleep 1
+	i2cset -y 1 0x40 0x84 0x30
+	sleep 1
+	i2cset -y 1 0x40 0x85 0x35
+	sleep 1
+	i2cset -y 1 0x40 0x86 0x30
+	sleep 1
+	i2cset -y 1 0x40 0x87 0x30
+	sleep 1
+	i2cset -y 1 0x40 0x88 0x33
+	sleep 1
+	i2cset -y 1 0x40 0x89 0x30
+	sleep 1
+	i2cset -y 1 0x40 0x8a 0x4c
+	sleep 1
+	i2cset -y 1 0x40 0x8b 0x31
+}
+
+##########################################################
+#            M A I N
+##########################################################
+echo "Stop UPL Service..."
+if [ -f /etc/init.d/S95upl ]; then /etc/init.d/S95upl stop;fi
+
+echo "Build/Rebuilding /opt partition..."
+delete_opt_partition
+create_opt_partition
+mount_opt_partition
+
+echo "Unpacking..."
+gzip -d $tmpname
+tar -xvf $tarname -C $outdir >/dev/null
+
+echo "Installing start script..."
+if [ -f /etc/init.d/S95upl ]; then rm /etc/init.d/S95upl;fi
+cp $upldir/scripts/S95upl /etc/init.d/
+
+echo "Creating database..."
+create_database
+
+echo "Calibrating touch screen"
+calibrate_ts
+
+echo "Set model code"
+set_model_code
+
+rm -f $tarname
+
+echo "*******************************************************************************************"
+echo "****************** UPL is installed under $upldir. Please reboot to use *******************"
+echo "*******************************************************************************************"
+
+exit 0

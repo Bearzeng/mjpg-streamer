@@ -79,6 +79,44 @@ void worker_cleanup(void *);
 #define INPUT_PLUGIN_NAME "HiK MVS Input plugin"
 static char plugin_name[] = INPUT_PLUGIN_NAME;
 
+struct _control vst_param[] = {
+    {
+        {0, V4L2_CTRL_TYPE_BUTTON, "初始化",  1, 0, 0, 0, 0, 0},
+        0,
+        NULL,
+        0,
+        IN_CMD_GENERIC
+    },
+    {
+        {1, V4L2_CTRL_TYPE_BUTTON, "开始测量", 1, 0, 0, 0, 0, 0},
+        0,
+        NULL,
+        0,
+        IN_CMD_GENERIC
+    },
+    {
+        {2, V4L2_CTRL_TYPE_BUTTON, "停止测量", 1, 0, 0, 0, 0, 0},
+        0,
+        NULL,
+        0,
+        IN_CMD_GENERIC
+    },
+    {
+        {3, V4L2_CTRL_TYPE_BUTTON, "截图", 1, 0, 0, 0, 0, 0},
+        0,
+        NULL,
+        0,
+        IN_CMD_GENERIC
+    },
+    {
+        {4, V4L2_CTRL_TYPE_BUTTON, "计算1次", 1, 0, 0, 0, 0, 0},
+        0,
+        NULL,
+        0,
+        IN_CMD_GENERIC
+    }
+};
+
 static void null_filter(void* filter_ctx, Mat &src, Mat &dst) {
     dst = src;
 }
@@ -161,6 +199,9 @@ int input_init(input_parameter *param, int plugin_no)
     for(i = 0; i < param->argc; i++) {
         DBG("argv[%d]=%s\n", i, param->argv[i]);
     }
+
+    in->in_parameters = vst_param;
+    in->parametercount = 5;
 
     /* parse the parameters */
     reset_getopt();
@@ -422,7 +463,7 @@ void *worker_thread(void *arg)
     pctx->init_settings = NULL;
     settings = NULL;
     
-    Mat src, dst;
+    Mat src;
     vector<uchar> jpeg_buffer;
     
     // this exists so that the numpy allocator can assign a custom allocator to
@@ -474,6 +515,44 @@ void *worker_thread(void *arg)
     pthread_cleanup_pop(1);
 
     return NULL;
+}
+
+int output_cmd(int plugin, unsigned int control_id, unsigned int group, long value)
+{
+    /*SLOGI*/ printf("command (%d, value: %ld) for group %d triggered for plugin instance #%02d", control_id, value, group, plugin);
+
+//    switch(control_id){
+//        case CMD_UNREGISTER: // Unregister
+//            //gauger_observers.remove(value);
+//            break;
+//        case CMD_REGISTER: // Register
+//            //gauger_observers.push_back(value);
+//            break;
+//        case CMD_START:
+//            SLOGI("Received START command");
+//            return 0;//start_calculating(false);
+//            break;
+//        case CMD_STOP:
+//            SLOGI("Received STOP command");
+//            //stop_calculating();
+//            break;
+//        case CMD_RESUME:
+//            return start_calculating(true);
+//            break;
+//        case CMD_CAL:
+//            //calculate_once(0);
+//            break;
+//        case CMD_TARGET:
+//            SLOGI("Received IDENTIFY_TARGET command");
+//            return 0;//identify_target();
+//            break;
+//        case CMD_STATE:
+//            break;
+//        default:
+//            SLOGI("command not support!");
+//    }
+
+    return 0;//OK;
 }
 
 /******************************************************************************

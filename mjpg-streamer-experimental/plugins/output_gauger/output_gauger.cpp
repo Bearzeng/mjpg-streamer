@@ -112,6 +112,7 @@ static int read_frame()
     unsigned char *tmp_framebuffer = NULL;
     char *resolution;
 
+    pthread_mutex_lock(&pglobal->in[input_number].db);
     pthread_cond_wait(&pglobal->in[input_number].db_update, &pglobal->in[input_number].db);
 
     /* read buffer */
@@ -135,7 +136,9 @@ static int read_frame()
     memcpy(global_frame.data, pglobal->in[input_number].buf_raw, frame_size);
     //get_y_data_from_yuyv(global_frame.data, pglobal->in[input_number].buf_raw, pglobal->in[input_number].size_raw);
     resolution = pglobal->in[input_number].param.argv[4];
-    sscanf(resolution, "%dx%d", &global_frame.width, &global_frame.height);
+    //sscanf(resolution, "%dx%d", &global_frame.width, &global_frame.height);
+    global_frame.width = 720;
+    global_frame.height = 540;
     gettimeofday(&global_frame.ts, NULL);
 
     /* allow others to access the global buffer again */
@@ -369,7 +372,7 @@ int init_target()
 
         try {
             db.open(UPL_CONFIG_DB);
-        temp_size = (*it).getWidth() * (*it).getHeight();
+            temp_size = (*it).getWidth() * (*it).getHeight();
             blob.setBinary((*it).getData(), temp_size);
             sql_insert.format("UPDATE template_config SET data=%Q WHERE id=%d", blob.getEncoded(), (*it).getId());
             db.execDML(sql_insert);
@@ -415,7 +418,7 @@ static int start_calculating(bool is_resumed)
 
     for (it = temp_list.begin(); it != temp_list.end(); ++it) {
         Calculation *cal_thread = new Calculation();
-	cal_list.push_back(cal_thread);
+        cal_list.push_back(cal_thread);
         cal_thread->init(&(*it));
         cal_thread->start();
     }
@@ -749,77 +752,77 @@ int output_cmd(int plugin, unsigned int control_id, unsigned int group, long val
 
     switch(control_id){
         case CMD_UNREGISTER: // 0
-            printf("CMD: CMD_UNREGISTER");
+            printf("CMD: CMD_UNREGISTER\n");
             gauger_observers.remove(value);
             break;
 
         case CMD_REGISTER: // 1
-            printf("CMD: CMD_REGISTER");
+            printf("CMD: CMD_REGISTER\n");
             gauger_observers.push_back(value);
             break;
 
         case CMD_START: // 2
-            printf("CMD: CMD_START");
+            printf("CMD: CMD_START\n");
             return start_calculating(false);
 
         case CMD_STOP: // 3
-            printf("CMD: CMD_STOP");
+            printf("CMD: CMD_STOP\n");
             stop_calculating();
 	    return OK;
 
         case CMD_RESUME: // 4
-            printf("CMD: CMD_RESUME");
+            printf("CMD: CMD_RESUME\n");
             return start_calculating(true);
 
         case CMD_CAL: // 5
-            printf("CMD: CMD_CAL");
+            printf("CMD: CMD_CAL\n");
             return calculate_once(value);
 
         case CMD_TARGET: // 6
-            printf("CMD: CMD_TARGET");
+            printf("CMD: CMD_TARGET\n");
             return init_target();
 
         case CMD_STATE: { // 7
-            printf("CMD: CMD_STATE");
+            printf("CMD: CMD_STATE\n");
             int *state = (int*)value;
             *state = current_state;
             return OK;
         }
 
         case CMD_TEMP_CREATE: // 8
-            printf("CMD: CMD_TEMP_CREATE");
+            printf("CMD: CMD_TEMP_CREATE\n");
             return create_template(value);
 
         case CMD_TEMP_UPDATE: // 9
-            printf("CMD: CMD_TEMP_UPDATE");
+            printf("CMD: CMD_TEMP_UPDATE\n");
             return update_template(value);
 
         case CMD_TEMP_DELETE: // 10
-            printf("CMD: CMD_TEMP_DELETE");
+            printf("CMD: CMD_TEMP_DELETE\n");
             return delete_template(value);
 
         case CMD_TEMP_DELETE_ALL: // 11
-            printf("CMD: CMD_TEMP_DELETE_ALL");
+            printf("CMD: CMD_TEMP_DELETE_ALL\n");
             return delete_template(0);
 
         case CMD_TEMP_RETRIEVE: // 12
-            printf("CMD: CMD_TEMP_RETRIEVE");
+            printf("CMD: CMD_TEMP_RETRIEVE\n");
             return retrieve_templates(value);
 
         case CMD_TEMP_RETRIEVE_BY_ID:
-            printf("CMD: CMD_TEMP_RETRIEVE_BY_ID");
+            printf("CMD: CMD_TEMP_RETRIEVE_BY_ID\n");
             return retrieve_template_by_id(value);
 
         case CMD_CAL_PARAM_UPDATE:
-            printf("CMD: CMD_CAL_PARAM_UPDATE");
+            printf("CMD: CMD_CAL_PARAM_UPDATE\n");
             return update_cal_param(value);
 
         case CMD_CAL_PARAM_RETRIEVE:
-            printf("CMD: CMD_CAL_PARAM_RETRIEVE");
+            printf("CMD: CMD_CAL_PARAM_RETRIEVE\n");
             return retrieve_cal_param(value);
 
         case CMD_DOWNLOAD:
-            printf("CMD: CMD_DOWNLOAD");
+            printf("CMD: CMD_DOWNLOAD\n");
             return start_downloading();
 
         default:

@@ -68,6 +68,7 @@ add_subdirectory(plugins/input_ptp2)
 add_subdirectory(plugins/input_uvc)
 add_subdirectory(plugins/input_libcamera)
 add_subdirectory(plugins/input_mvs)
+add_subdirectory(plugins/input_gauger)
 
 #
 # Output plugins
@@ -80,6 +81,7 @@ add_subdirectory(plugins/output_udp)
 add_subdirectory(plugins/output_viewer)
 add_subdirectory(plugins/output_zmqserver)
 add_subdirectory(plugins/output_gauger)
+add_subdirectory(plugins/output_gauger_sp)
 
 #
 # mjpg_streamer executable

@@ -55,6 +55,8 @@ find_library(JPEG_LIB jpeg)
 # Libraries
 #
 #add_subdirectory(lib/gauger)
+add_subdirectory(3rd/libzmq-4.3.5)
+#add_subdirectory(3rd/cppzmq-4.10.0)
 
 #
 # Input plugins

@@ -25,6 +25,8 @@
 #include <pthread.h>
 #include <opencv2/opencv.hpp>
 
+#include <zmq.hpp>
+
 #include "input_gauger.h"
 #include "MvCameraControl.h"
 #include "hik_capture.h"
@@ -58,6 +60,10 @@ typedef void (*filter_free_fn)(void* filter_ctx);
 
 static GaugerState  g_current_state = STATE_UNINITIALIZED;
 static Control_id_t g_cmd = CMD_UNKNOWN;
+static CalParam     g_cal_ctrl_param{};   // 测量控制参数
+
+#define DISP_FRAME_RATE_MS  30 // 用于显示的帧率
+
 
 typedef struct {
     pthread_t   worker;
@@ -489,6 +495,10 @@ void *worker_thread(void *arg)
     int ret;
     char buf[64] = {0};
     POINT_I pt[5];
+    struct timeval ts;
+    bool need_disp = false; // 是否需要显示
+
+    unsigned long long prev_time_ms, cur_time;
 
     // this exists so that the numpy allocator can assign a custom allocator to
     // the mat, so that it doesn't need to copy the data each time
@@ -496,8 +506,21 @@ void *worker_thread(void *arg)
         src = pctx->filter_init_frame(pctx->filter_ctx);
 
     while (!pglobal->stop) {
+
+        // 获取图像
         hik.read(src);
-        //cvtColor(src, dst, cv::COLOR_GRAY2BGR);
+
+        // 控制远程显示的帧速，不需要在远端显示太快
+        gettimeofday(&ts, NULL);
+        cur_time = ts.tv_sec*1000 + ts.tv_usec/1000;
+        if ((cur_time - prev_time_ms <  DISP_FRAME_RATE_MS)) {
+            //printf("cur_time - prev_time_ms = %ld\n", cur_time - prev_time_ms);
+            need_disp = false;
+        } else {
+            prev_time_ms = cur_time;
+            need_disp = true;
+            cvtColor(src, dst, cv::COLOR_GRAY2BGR);
+        }
 
 #if 0
         if (!pctx->capture.read(src))
@@ -524,14 +547,22 @@ void *worker_thread(void *arg)
             if (g_cmd == CMD_START) {
                 g_current_state = STATE_STARTED;
             } else if (g_cmd == CMD_INIT_TARGET) {
-                ;
+                ret = gauger->InitTarget(src.data, pt);
+                if (0 == ret) {
+                    printf("Identify target OK\n");
+                } else {
+                    printf("Failed to identify target\n");
+                    g_current_state = STATE_UNINITIALIZED;
+                }
             } else {
                 ;
             }
 
-            for(int i = 0; i < 5; i++) {
-                Rect rect = Rect(pt[i].x-5, pt[i].y-5, 40, 40);
-                rectangle(src, rect, color, 2, LINE_8);
+            if (need_disp) {
+                for(int i = 0; i < 5; i++) {
+                    Rect rect = Rect(pt[i].x-5, pt[i].y-5, 40, 40);
+                    rectangle(dst, rect, color, 2, LINE_8);
+                }
             }
         }
             break;
@@ -541,17 +572,19 @@ void *worker_thread(void *arg)
             } else {
                 POINT_I ptOut;
                 float x, y;
-                struct timeval ts;
                 ret = gauger->MeasureTarget(src.data, ptOut, &x, &y);
-                gettimeofday(&ts, NULL);
-                tm* local = localtime(&ts.tv_sec);
-                strftime(buf, 64, "%Y-%m-%d %H:%M:%S", local);
-                printf("ptOut=(%d, %d), \tx=%f, y=%f, ts=%s.%d\n", ptOut.x, ptOut.y, x, y, buf, ts.tv_usec/1000);
-                Rect rect = Rect(ptOut.x-5, ptOut.y-5, 40, 40);
-                rectangle(src, rect, color, 2, LINE_8);
-                putText(src, "x="+to_string(x)+" y="+to_string(y), Point(ptOut.x-180, ptOut.y-20), FONT_HERSHEY_COMPLEX, 0.8, color);
                 if (!ret) {
                     break;
+                } else {
+                    gettimeofday(&ts, NULL);
+                    tm* local = localtime(&ts.tv_sec);
+                    strftime(buf, 64, "%Y-%m-%d %H:%M:%S", local);
+                    printf("ptOut=(%d, %d), \tx=%f, y=%f, ts=%s.%d\n", ptOut.x, ptOut.y, x, y, buf, ts.tv_usec/1000);
+                    if (need_disp) {
+                        Rect rect = Rect(ptOut.x-5, ptOut.y-5, 40, 40);
+                        rectangle(dst, rect, color, 2, LINE_8);
+                        putText(dst, "x="+to_string(x)+" y="+to_string(y), Point(ptOut.x-180, ptOut.y-20), FONT_HERSHEY_COMPLEX, 0.8, color);
+                    }
                 }
             }
             break;
@@ -566,10 +599,16 @@ void *worker_thread(void *arg)
         //printf("src.size=%d\n", src.size());
 
         /* copy JPG picture to global buffer */
+
+        // 必须加上pglobal->stop， 否则output plugin在程序关闭时由于锁的原因会挂起
+        if (!need_disp && !pglobal->stop) {
+            continue;
+        }
+
         pthread_mutex_lock(&in->db);
 #if 1
         // take whatever Mat it returns, and write it to jpeg buffer
-        imencode(".jpg", src, jpeg_buffer, compression_params);
+        imencode(".jpg", dst, jpeg_buffer, compression_params);
         
         // TODO: what to do if imencode returns an error?
         
@@ -622,7 +661,7 @@ int input_cmd(int plugin, unsigned int control_id, unsigned int group, int value
         break;
     case CMD_INIT_TARGET:
         printf("Received IDENTIFY_TARGET command\n");
-         g_cmd = CMD_INIT_TARGET;
+        g_cmd = CMD_INIT_TARGET;
         return 0;//identify_target();
         break;
     case CMD_STATE:

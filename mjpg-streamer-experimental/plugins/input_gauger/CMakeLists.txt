@@ -11,8 +11,11 @@ if (PLUGIN_INPUT_GAUGER)
     enable_language(CXX)
     include_directories(${OpenCV_INCLUDE_DIRS})
 
+    include_directories(${CMAKE_SOURCE_DIR}/3rd/cppzmq-4.10.0)
+
     include_directories(sdk/x86_64/include)
     include_directories(gauger)
+
 
     MJPG_STREAMER_PLUGIN_COMPILE(${PROJECT_NAME}
         input_gauger.cpp
@@ -25,7 +28,7 @@ if (PLUGIN_INPUT_GAUGER)
         ${CMAKE_CURRENT_SOURCE_DIR}/gauger/x64
     )
 
-    target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} MvCameraControl gauger sqlite3)
+    target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} MvCameraControl gauger sqlite3 zmq)
        
     
 endif()

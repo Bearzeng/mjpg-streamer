@@ -39,11 +39,26 @@ typedef enum {
     STATE_UNKNOWN = 255
 } GaugerState;
 
+// Param for a calculation
 typedef struct {
-    unsigned int times;
-    unsigned int interval;
-    unsigned char level;
+    unsigned int times;    // 测量次数
+    unsigned int interval; // 测量间隔， 单位：ms
+    unsigned char level;   // 取连续多少次作平均
 } CalParam;
+
+typedef struct {
+    int width;
+    int height;
+    struct timeval ts;
+    unsigned char *data;
+} Frame;
+
+typedef struct {
+    unsigned char tempId;
+    float offsetX;
+    float offsetY;
+} CalResult;
+
 
 int input_init(input_parameter* param, int id);
 int input_stop(int id);

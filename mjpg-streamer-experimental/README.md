@@ -44,5 +44,5 @@ Output plugins:
 Setup Development Env
 =====================
 
-sudo dnf install protobuf-devel.x86_64
+sudo dnf install protobuf-devel.x86_64 protobuf-c-devel.x86_64 
 
